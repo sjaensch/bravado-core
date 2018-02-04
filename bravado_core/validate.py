@@ -15,6 +15,7 @@ from bravado_core.exception import SwaggerMappingError
 from bravado_core.exception import SwaggerSecurityValidationError
 from bravado_core.model import is_object
 from bravado_core.schema import SWAGGER_PRIMITIVES
+from bravado_core.schema import is_dict_like
 from bravado_core.swagger20_validator import get_validator_type
 
 
@@ -25,7 +26,7 @@ def scrub_sensitive_value(func):
             return func(*args, **kwargs)
         except jsonschema.ValidationError as e:
             if (
-                isinstance(e.schema, dict) and
+                is_dict_like(e.schema) and
                 e.schema.get('x-sensitive', False)
             ):
                 e.message = '*** ' + e.message[len(str(e.instance)):]

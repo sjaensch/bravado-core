@@ -5,6 +5,7 @@ from mock import patch
 
 from bravado_core.exception import SwaggerValidationError
 from bravado_core.formatter import SwaggerFormat
+from bravado_core.spec import Spec
 from bravado_core.swagger20_validator import format_validator
 from bravado_core.validate import validate_object
 
@@ -110,8 +111,8 @@ DummyFormat = SwaggerFormat(
     )
 )
 def test_validate_object_with_different_format_configurations(
-        minimal_swagger_spec, value, format_, x_nullable, expect_exception):
-    minimal_swagger_spec.spec_dict['definitions']['obj'] = {
+        minimal_swagger_dict, value, format_, x_nullable, expect_exception):
+    minimal_swagger_dict['definitions']['obj'] = {
         'properties': {
             'prop': {
                 'type': 'string',
@@ -120,6 +121,7 @@ def test_validate_object_with_different_format_configurations(
             }
         }
     }
+    minimal_swagger_spec = Spec.from_dict(minimal_swagger_dict)
     minimal_swagger_spec.register_format(DummyFormat)
     captured_exception = None
     try:

@@ -8,6 +8,7 @@ import warnings
 from contextlib import closing
 
 import yaml
+from frozendict import frozendict
 from jsonref import JsonRef
 from jsonschema import FormatChecker
 from jsonschema.compat import urlopen
@@ -35,7 +36,6 @@ from bravado_core.security_definition import SecurityDefinition
 from bravado_core.spec_flattening import flattened_spec
 from bravado_core.util import cached_property
 from bravado_core.util import memoize_by_id
-
 
 log = logging.getLogger(__name__)
 
@@ -243,6 +243,24 @@ class Spec(object):
 
         self.api_url = build_api_serving_url(self.spec_dict, self.origin_url)
         self.resources = build_resources(self)
+        self.original_spec_dict = self.spec_dict
+        self.spec_dict = make_immutable(self.spec_dict)
+        if not json.loads(json.dumps(self.original_spec_dict)) == json.loads(json.dumps(make_mutable(self.spec_dict))):
+            def compare(orig_fragment, fragment):
+                if is_dict_like(orig_fragment):
+                    return all(compare(orig_val, fragment[key]) for key, orig_val in iteritems(orig_fragment))
+                elif is_list_like(fragment):
+                    return all(compare(orig_fragment[i], fragment[i]) for i in range(len(orig_fragment)))
+                if orig_fragment != fragment:
+                    print('{} and {} are not equal!'.format(orig_fragment, fragment))
+                    return False
+                return True
+            equal = compare(self.original_spec_dict, self.spec_dict)
+            from pprint import pprint
+            pprint(self.original_spec_dict)
+            pprint(self.spec_dict)
+            assert equal is False
+            assert False, 'The two specs are not identical!'
 
     @cached_property
     def _internal_spec_dict(self):
@@ -509,6 +527,22 @@ def build_api_serving_url(spec_dict, origin_url=None, preferred_scheme=None):
     return urlunparse((scheme, netloc, path, None, None, None))
 
 
+def make_immutable(fragment):
+    if is_dict_like(fragment):
+        return frozendict((key, make_immutable(value)) for key, value in iteritems(fragment))
+    elif is_list_like(fragment):
+        return tuple(make_immutable(element) for element in fragment)
+    return fragment
+
+
+def make_mutable(fragment):
+    if is_dict_like(fragment):
+        return dict((key, make_mutable(value)) for key, value in iteritems(fragment))
+    elif is_list_like(fragment):
+        return [make_mutable(element) for element in fragment]
+    return fragment
+
+
 def post_process_spec(swagger_spec, on_container_callbacks):
     """Post-process the passed in swagger_spec.spec_dict.
 
@@ -608,18 +642,14 @@ def strip_xscope(spec_dict):
     :param spec_dict: Swagger spec in dict form. This is treated as read-only.
     :return: deep copy of spec_dict with the x-scope metadata stripped out.
     """
-    result = copy.deepcopy(spec_dict)
-
     def descend(fragment):
         if is_dict_like(fragment):
-            for key in list(fragment.keys()):
-                if key == 'x-scope':
-                    del fragment['x-scope']
-                else:
-                    descend(fragment[key])
+            return {
+                key: descend(value) for key, value in iteritems(fragment)
+                if key != 'x-scope'
+            }
         elif is_list_like(fragment):
-            for element in fragment:
-                descend(element)
+            return [descend(element) for element in fragment]
+        return fragment
 
-    descend(result)
-    return result
+    return descend(spec_dict)

@@ -4,7 +4,7 @@ import copy
 import pytest
 
 from bravado_core.exception import SwaggerMappingError
-from bravado_core.spec import Spec
+from bravado_core.spec import Spec, make_mutable
 from bravado_core.unmarshal import unmarshal_schema_object
 from tests.conftest import get_url
 
@@ -54,7 +54,7 @@ def test_use_models_false(petstore_dict):
 
 def test_missing_object_spec(petstore_dict):
     petstore_spec = Spec.from_dict(petstore_dict, config={'use_models': False})
-    category_spec = copy.deepcopy(
+    category_spec = make_mutable(
         petstore_spec.spec_dict['definitions']['Category']
     )
     # without a type, do no validation
@@ -82,7 +82,7 @@ def test_missing_object_spec_defaulting_on(petstore_dict):
     then missing types default to object
     """
     petstore_spec = Spec.from_dict(petstore_dict, config={'use_models': False, 'default_type_to_object': True})
-    category_spec = copy.deepcopy(
+    category_spec = make_mutable(
         petstore_spec.spec_dict['definitions']['Category']
     )
 
@@ -106,7 +106,7 @@ def test_missing_object_spec_defaulting_on(petstore_dict):
 
 def test_invalid_type(petstore_dict):
     petstore_spec = Spec.from_dict(petstore_dict, config={'use_models': False})
-    category_spec = copy.deepcopy(
+    category_spec = make_mutable(
         petstore_spec.spec_dict['definitions']['Category']
     )
 

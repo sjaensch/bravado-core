@@ -20,7 +20,7 @@ def test_pet(petstore_spec):
 
 
 def test_unicode(petstore_spec):
-    model_spec = petstore_spec.spec_dict['definitions']['Pet']
+    model_spec = petstore_spec.original_spec_dict['definitions']['Pet']
     model_spec['properties']['status']['description'] = u'Ümlaut1'
 
     expected = (

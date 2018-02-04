@@ -64,8 +64,8 @@ def test_skip_validation_for_optional_enum_with_None_value(
         [{'prop': 'In-Valid Value'}, ['VAL'], True],
     )
 )
-def test_validate_object_with_different_enum_configurations(minimal_swagger_spec, value, enum_values, expect_exception):
-    minimal_swagger_spec.spec_dict['definitions']['obj'] = {
+def test_validate_object_with_different_enum_configurations(minimal_swagger_dict, value, enum_values, expect_exception):
+    minimal_swagger_dict['definitions']['obj'] = {
         'properties': {
             'prop': {
                 'type': 'string',
@@ -74,6 +74,7 @@ def test_validate_object_with_different_enum_configurations(minimal_swagger_spec
             }
         }
     }
+    minimal_swagger_spec = Spec.from_dict(minimal_swagger_dict)
     captured_exception = None
     try:
         validate_object(
@@ -87,4 +88,4 @@ def test_validate_object_with_different_enum_configurations(minimal_swagger_spec
     if not expect_exception:
         assert captured_exception is None
     else:
-        assert captured_exception.message == '\'{0}\' is not one of {1}'.format(value['prop'], enum_values)
+        assert captured_exception.message == '\'{0}\' is not one of {1}'.format(value['prop'], tuple(enum_values))

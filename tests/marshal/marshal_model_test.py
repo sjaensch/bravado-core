@@ -97,7 +97,7 @@ def test_marshal_model_with_none_model_type(petstore_spec):
 
 
 def test_marshal_nullable_model(petstore_spec):
-    pet_spec = copy.deepcopy(petstore_spec.spec_dict['definitions']['Pet'])
+    pet_spec = copy.deepcopy(petstore_spec.original_spec_dict['definitions']['Pet'])
     pet_spec['x-nullable'] = True
     assert marshal_model(petstore_spec, pet_spec, None) is None
 
